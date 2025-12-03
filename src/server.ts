@@ -1,5 +1,6 @@
 // udp-server.ts
 import dgram, { RemoteInfo } from "dgram";
+import os from "os";
 
 interface JoystickData {
   left: {
@@ -28,6 +29,23 @@ class UDPServer {
     this.setupServer();
   }
 
+  getLocalIP() {
+    const interfaces = os.networkInterfaces();
+
+    for (const name of Object.keys(interfaces)) {
+      const ifaceList = interfaces[name];
+
+      if (!ifaceList) continue;
+      for (const iface of ifaceList) {
+        // Skip internal and non-IPv4 addresses
+        if (iface.family === "IPv4" && !iface.internal) {
+          return iface.address;
+        }
+      }
+    }
+    return "127.0.0.1";
+  }
+
   private setupServer(): void {
     this.server.on("error", (err: Error) => {
       console.error(`❌ Server error:\n${err.stack}`);
@@ -40,15 +58,17 @@ class UDPServer {
 
       try {
         const message = msg.toString();
-
+        console.log(message);
         // Try to parse as JSON (joystick data)
-        try {
-          const data: JoystickData = JSON.parse(message);
-          this.handleJoystickData(data, rinfo);
-        } catch {
-          // Not JSON, handle as plain text message
-          this.handleTextMessage(message, rinfo);
-        }
+        // try {
+        //   const data: JoystickData = JSON.parse(message);
+        //   // this.handleJoystickData(data, rinfo);
+
+        //   console.log(data);
+        // } catch {
+        //   // Not JSON, handle as plain text message
+        //   this.handleTextMessage(message, rinfo);
+        // }
       } catch (err) {
         console.error("Error processing message:", err);
       }
@@ -56,12 +76,21 @@ class UDPServer {
 
     this.server.on("listening", () => {
       const address = this.server.address();
+      const localIP = this.getLocalIP();
+
       console.log("\n🚀 UDP Server Started");
-      console.log("=".repeat(50));
-      console.log(`📡 Listening on: ${address.address}:${address.port}`);
-      console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
-      console.log("=".repeat(50));
-      console.log("\n💡 Waiting for messages...\n");
+      console.log("=".repeat(60));
+      console.log(
+        `📡 Server listening on all interfaces: ${address.address}:${address.port}`
+      );
+      console.log("");
+      console.log("📱 USE THIS IP IN YOUR APP:");
+      console.log(`   👉 ${localIP}:${address.port}`);
+      console.log("");
+      console.log("💡 Make sure your phone and computer are on the same WiFi!");
+      console.log("=".repeat(60));
+      console.log("\n⏰ Started at:", new Date().toLocaleString());
+      console.log("\n💬 Waiting for messages...\n");
     });
 
     this.server.bind(this.port);
@@ -110,6 +139,7 @@ class UDPServer {
         status: "received",
         timestamp: Date.now(),
       });
+
       this.sendResponse(ack, rinfo);
     }
   }
@@ -198,6 +228,6 @@ process.on("SIGTERM", () => {
 // Show stats every 60 seconds
 setInterval(() => {
   server.getStats();
-}, 60000);
+}, 600000);
 
 export default UDPServer;
