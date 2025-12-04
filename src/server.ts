@@ -60,15 +60,15 @@ class UDPServer {
         const message = msg.toString();
         console.log(message);
         // Try to parse as JSON (joystick data)
-        // try {
-        //   const data: JoystickData = JSON.parse(message);
-        //   // this.handleJoystickData(data, rinfo);
+        try {
+          const data: JoystickData = JSON.parse(message);
+          // this.handleJoystickData(data, rinfo);
 
-        //   console.log(data);
-        // } catch {
-        //   // Not JSON, handle as plain text message
-        //   this.handleTextMessage(message, rinfo);
-        // }
+          console.log(data);
+        } catch {
+          // Not JSON, handle as plain text message
+          this.handleTextMessage(message, rinfo);
+        }
       } catch (err) {
         console.error("Error processing message:", err);
       }
@@ -228,6 +228,6 @@ process.on("SIGTERM", () => {
 // Show stats every 60 seconds
 setInterval(() => {
   server.getStats();
-}, 600000);
+}, 60000000);
 
 export default UDPServer;
